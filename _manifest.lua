@@ -4,5 +4,5 @@ return {
 	'init.lua',
 
 	-- Generators
-	'generators/compile_database.lua',
+	'generators/compile_commands.lua',
 }
