@@ -11,38 +11,38 @@ compiledb.compile_commands = m
 function m.generate( wks )
 	p.indent( '\t' )
 
-	local prj_it = p.workspace.eachproject( wks )
-	local prj    = prj_it()
-	local cfg_it = p.project.eachconfig( prj )
-	local cfg    = cfg_it()
-
 	p.push( '[' )
 
-	for i=1,#cfg.files do
-		local file = cfg.files[ i ]
+	local should_pop = false
 
-		if( path.isnativefile( file ) ) then
-			p.push( '{' )
-			m.write_file( cfg, file )
+	for prj in p.workspace.eachproject( wks ) do
+		local arbitrary_config = p.project.eachconfig( prj )()
+		local files            = arbitrary_config.files
 
-			if( i == #cfg.files ) then
-				p.pop( '}' )
-			else
-				p.pop( '},' )
+		for i=1,#files do
+			local file = files[ i ]
+
+			if( path.isnativefile( file ) ) then
+				if( should_pop ) then p.pop( '},' ) end
+
+				p.push( '{' )
+				should_pop = true
+
+				m.write_file( arbitrary_config, file )
 			end
 		end
 	end
 
+	p.pop( '}' )
 	p.pop( ']' )
 end
 
 function m.write_file( cfg, filepath )
-	local directory = path.getdirectory( filepath )
-	local basename  = path.getbasename( filepath )
-	local output    = path.join( cfg.buildtarget.directory, basename..'.o' )
+	local basename = path.getbasename( filepath )
+	local output   = path.join( cfg.buildtarget.directory, basename..'.o' )
 
 	p.w( '"file": "%s",', filepath )
-	p.w( '"directory": "%s",', directory )
+	p.w( '"directory": "%s",', cfg.project.location )
 	p.w( '"output": "%s",', output )
 	m.write_arguments( cfg )
 end
